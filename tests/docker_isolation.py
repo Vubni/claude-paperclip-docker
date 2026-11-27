@@ -1,4 +1,5 @@
 import json
+import os
 from pathlib import Path
 import shutil
 import socket
@@ -167,12 +168,15 @@ def run():
         command = ['openssl','req','-new','-x509','-nodes','-newkey','rsa:2048','-days','1','-subj','/CN=upstream.test','-keyout',str(folder/'key.pem'),'-out',str(folder/'cert.pem')]
         subprocess.run(command,stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL,check=True)
         image = 'python:3.12-slim-bookworm'
-        base = {'image':image,'pull_policy':'never','read_only':True,'cap_drop':['ALL'],'security_opt':['no-new-privileges:true'],'volumes':[f'{folder}:/test:ro'],'tmpfs':['/tmp']}
+        # The fixture is private (0700) and contains a 0600 temporary TLS key.
+        # With all capabilities dropped, container root cannot traverse the runner's directory.
+        base = {'user': f'{os.getuid()}:{os.getgid()}', 'image':image,'pull_policy':'never','read_only':True,'cap_drop':['ALL'],'security_opt':['no-new-privileges:true'],'volumes':[f'{folder}:/test:ro'],'tmpfs':['/tmp']}
         compose = {
           'services': {
             'workload':dict(base,command=['python','-B','/test/workload.py'],dns=['127.0.0.1'],networks=['workload']),
             'region-gateway':dict(base,command=['python','-B','/test/fixture.py'],ports=['127.0.0.1::8000'],networks={'uplink':{},'workload':{'aliases':['region-private']}}),
-            'uplink-fixture':dict(base,command=['python','-B','/test/uplink.py'],networks=['uplink']),
+            'uplink-fixture':dict(base, command=['python','-B','/test/uplink.py'], networks=['uplink'],
+                                sysctls={'net.ipv4.ip_unprivileged_port_start':'0'}),
           },
           'networks':{
             'workload':{'internal':True,'enable_ipv6':False,'driver_opts':{'com.docker.network.bridge.gateway_mode_ipv4':'isolated'}},
@@ -200,6 +204,8 @@ def run():
             assert host == '127.0.0.1'
             record('host_bind_loopback_only PASS')
             identifier = docker('ps','-q','uplink-fixture')
+            if not identifier:
+                raise RuntimeError("The isolated test DNS/TCP fixture exited during startup")
             fmt = '{{range .NetworkSettings.Networks}}{{.IPAddress}} {{.GlobalIPv6Address}}{{end}}'
             addr4, addr6 = subprocess.check_output(['docker','inspect','--format',fmt,identifier],text=True,stderr=subprocess.DEVNULL).split()
             positive = False
