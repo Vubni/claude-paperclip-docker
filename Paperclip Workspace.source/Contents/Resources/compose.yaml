@@ -1,0 +1,33 @@
+name: paperclip-workspace
+services:
+  paperclip:
+    image: local/paperclip-workspace:ui-v6
+    build: ./localization
+    cpus: 1.5
+    mem_limit: 6g
+    cap_drop: [NET_RAW]
+    security_opt: [no-new-privileges:true]
+    stop_grace_period: 90s
+    ports:
+      - "127.0.0.1:43107:43107"
+    environment:
+      PORT: "43107"
+      BETTER_AUTH_URL: http://localhost:43107
+      PAPERCLIP_PUBLIC_URL: http://localhost:43107
+      BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET:?}
+      PAPERCLIP_TOOL_ACTION_SIGNING_SECRET: ${PAPERCLIP_TOOL_ACTION_SIGNING_SECRET:?}
+      LANG: C.UTF-8
+      LANGUAGE: en_US:en
+      TZ: UTC
+    volumes:
+      - data:/paperclip
+      - type: volume
+        source: claude-home
+        target: /home/developer/projects
+        volume:
+          subpath: projects
+volumes:
+  data:
+  claude-home:
+    external: true
+    name: claude-english_home

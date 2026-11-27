@@ -1,0 +1,22 @@
+name: paperclip-browser
+services:
+  desktop:
+    image: local/paperclip-linux-browser:1
+    init: true
+    hostname: paperclip-browser
+    cpus: 1
+    mem_limit: 4g
+    shm_size: 256m
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    tmpfs:
+      - /tmp:rw,nosuid,nodev,mode=1777,size=512m
+      - /home/developer:rw,nosuid,nodev,uid=1000,gid=1000,mode=700,size=512m
+    working_dir: /home/developer
+    ports:
+      - "127.0.0.1::6080"
+    healthcheck:
+      test: ["CMD", "/opt/workspace/ready"]
+      interval: 3s
+      timeout: 3s
+      retries: 15

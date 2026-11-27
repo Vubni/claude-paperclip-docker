@@ -1,0 +1,13 @@
+name: claude-english
+services:
+  shell:
+    build: .
+    hostname: claude-linux
+    cpus: 1
+    mem_limit: 4g
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    volumes:
+      - home:/home/developer
+volumes:
+  home:

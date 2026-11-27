@@ -1,0 +1,8 @@
+*
+!Dockerfile
+!gateway.py
+!profile.py
+!countries.txt
+!desktop.Dockerfile
+!firefox.json
+!claude-desktop

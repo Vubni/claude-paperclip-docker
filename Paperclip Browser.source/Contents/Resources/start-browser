@@ -1,0 +1,25 @@
+#!/bin/bash
+set -euo pipefail
+exec >/dev/null 2>&1
+umask 077
+mkdir -p "$XDG_RUNTIME_DIR"
+if [[ -z "${DBUS_SESSION_BUS_ADDRESS:-}" ]]; then exec dbus-run-session -- "$0"; fi
+printf '%s\n' "$DBUS_SESSION_BUS_ADDRESS" > "$XDG_RUNTIME_DIR/browser-bus"
+Xvfb "$DISPLAY" -screen 0 1440x900x24 -nolisten tcp &
+for ((i=0; i<100; i++)); do xdpyinfo && break; sleep 0.1; done
+xdpyinfo || exit 62
+openbox --config-file /opt/workspace/openbox.xml &
+python3 - <<'PY'
+import os, secrets
+from pathlib import Path
+runtime = Path(os.environ["XDG_RUNTIME_DIR"])
+token = secrets.token_hex(32)
+(runtime / "targets").write_text(token + ": 127.0.0.1:5900\n")
+(runtime / "viewer-token").write_text(token)
+PY
+x11vnc -display "$DISPLAY" -listen 127.0.0.1 -no6 -rfbport 5900 -forever -shared -nopw -noxdamage &
+rfb=$!
+websockify --web=/usr/share/novnc --token-plugin=TokenFile --token-source="$XDG_RUNTIME_DIR/targets" 6080 &
+proxy=$!
+firefox-esr --private-window about:blank &
+wait -n "$!" "$rfb" "$proxy"

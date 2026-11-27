@@ -1,0 +1,18 @@
+services:
+  paperclip:
+    labels:
+      workspace.region.profile: ${REGION_DIGEST:?}
+    networks: [workload]
+    ports: !reset []
+    dns: [127.0.0.1]
+    user: "1000:1000"
+    cap_drop: !override [ALL]
+    environment:
+      TZ: ${WORKSPACE_TZ:?}
+      http_proxy: http://region-gateway:3128
+      https_proxy: http://region-gateway:3128
+      HTTP_PROXY: http://region-gateway:3128
+      HTTPS_PROXY: http://region-gateway:3128
+      NODE_USE_ENV_PROXY: "1"
+      NO_PROXY: localhost,127.0.0.1
+      no_proxy: localhost,127.0.0.1

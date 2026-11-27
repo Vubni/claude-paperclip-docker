@@ -1,0 +1,54 @@
+--- a/packages/adapters/codex-local/src/index.ts
++++ b/packages/adapters/codex-local/src/index.ts
+@@ -1,3 +1,4 @@
++import { cliCatalog } from "./workspace-catalog.js";
+ import {
+   PAPERCLIP_RUNNER_DEFAULT_MODELS,
+ } from "@paperclipai/adapter-utils";
+@@ -42,6 +43,7 @@
+ }
+ 
+ export const CODEX_LOCAL_FAST_MODE_SUPPORTED_MODELS = [
++  ...cliCatalog.filter(model => model.fast).map(model => model.id),
+   "gpt-6-astra",
+   "gpt-6.1-sol",
+   "gpt-6-sol",
+@@ -99,6 +101,8 @@
+   model: string | null | undefined,
+ ): readonly CodexLocalReasoningEffort[] {
+   const normalizedModel = normalizeCodexModel(model);
++  const listed = cliCatalog.find(model => model.id === normalizedModel);
++  if (listed) return listed.efforts;
+   switch (normalizedModel) {
+     case "gpt-6-astra":
+     case "gpt-6.1-sol":
+@@ -205,6 +209,8 @@
+ }
+ 
+ export function isCodexLocalFastModeSupported(model: string | null | undefined): boolean {
++  const listed = cliCatalog.find(entry => entry.id === normalizeCodexModel(model));
++  if (listed) return listed.fast;
+   if (isCodexLocalManualModel(model)) return true;
+   const normalizedModel = typeof model === "string" ? model.trim() : "";
+   // Empty means we're omitting --model so the Codex CLI picks its own default.
+@@ -219,7 +225,7 @@
+ // Ordered the way the ChatGPT app orders Codex models (#14878): newest model version first,
+ // then by decreasing capability inside each version, older models at the end. The server
+ // returns this list as written and the model dropdown keeps its order.
+-export const models = [
++const legacyModels = [
+   { id: "gpt-6.1-sol", label: "gpt-6.1-sol" },
+   { id: "gpt-6-astra", label: "gpt-6-astra" },
+   { id: "gpt-6-sol", label: "gpt-6-sol" },
+@@ -237,6 +243,11 @@
+   { id: "o4-mini", label: "o4-mini" },
+   { id: "o3-mini", label: "o3-mini" },
+   { id: "codex-mini-latest", label: "Codex Mini" },
++];
++
++export const models = [
++  ...cliCatalog.map(({ id, label }) => ({ id, label })),
++  ...legacyModels.filter(model => !cliCatalog.some(entry => entry.id === model.id)),
+ ];
+ 
+ export const agentConfigurationDoc = `# codex_local agent configuration

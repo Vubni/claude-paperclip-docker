@@ -1,0 +1,38 @@
+services:
+  region-gateway:
+    labels:
+      workspace.region.profile: ${REGION_DIGEST:?}
+    image: local/workspace-region-gateway:1
+    build: ${REGION_DIR:?}
+    environment:
+      REGION_PROFILE: ${REGION_PROFILE:?}
+      REGION_SERVICE: ${REGION_SERVICE:?}
+      REGION_PORT: ${REGION_PORT:?}
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    sysctls:
+      net.ipv4.ip_forward: "0"
+    read_only: true
+    tmpfs:
+      - /tmp:rw,nosuid,nodev,noexec,mode=1777,size=8m
+    mem_limit: 512m
+    cpus: 0.5
+    ports:
+      - "127.0.0.1:${REGION_HOST_PORT:-}:${REGION_PORT:?}"
+    networks:
+      uplink: {}
+      workload:
+        aliases: [region-private]
+    healthcheck:
+      test: ["CMD", "python3", "-B", "/opt/region/gateway.py", "--ready"]
+      interval: 2s
+      timeout: 2s
+      retries: 2
+      start_period: 120s
+networks:
+  workload:
+    internal: true
+    enable_ipv6: false
+    driver_opts:
+      com.docker.network.bridge.gateway_mode_ipv4: isolated
+  uplink: {}

@@ -1,0 +1,13 @@
+{
+  "policies": {
+    "Proxy": {
+      "Mode": "manual", "Locked": true,
+      "HTTPProxy": "region-gateway:3128", "SSLProxy": "region-gateway:3128",
+      "Passthrough": "localhost, 127.0.0.1"
+    },
+    "DNSOverHTTPS": {"Enabled": false, "Locked": true},
+    "Preferences": {
+      "media.peerconnection.enabled": {"Value": false, "Status": "locked"}
+    }
+  }
+}

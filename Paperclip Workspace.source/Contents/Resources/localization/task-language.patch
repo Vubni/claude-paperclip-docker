@@ -1,0 +1,325 @@
+--- a/src/components/InlineEditor.tsx
++++ b/src/components/InlineEditor.tsx
+@@ -12,6 +12,7 @@
+ 
+ interface InlineEditorProps {
+   value: string;
++  displayValue?: string;
+   onSave: (value: string) => void | Promise<unknown>;
+   as?: "h1" | "h2" | "p" | "span";
+   className?: string;
+@@ -79,6 +80,7 @@
+ 
+ function OwnedInlineEditor({
+   value,
++  displayValue,
+   onSave,
+   as: Tag = "span",
+   className,
+@@ -553,7 +555,7 @@
+       )}
+       onClick={() => setEditing(true)}
+     >
+-      {value || placeholder}
++      {displayValue || value || placeholder}
+     </DisplayTag>
+     {autosaveState === "stalled" ? <button type="button" className="text-xs text-foreground underline" onClick={autosave.resendNow}>Retry saving</button> : null}
+     </>
+--- a/src/pages/IssueDetail.tsx
++++ b/src/pages/IssueDetail.tsx
+@@ -1,3 +1,4 @@
++import { workspaceRussian, taskDisplayTitle, greetingText, openingInteraction } from "@/lib/workspaceTaskText";
+ import { useIssueIdBatches } from "@/hooks/useIssueIdBatches";
+ import { TaskChatLoadingShell } from "@/components/task-chat/TaskChatLoadingShell";
+ import { useConversationHistoryPages, type ConversationHistoryPage } from "@/hooks/useConversationHistoryPages";
+@@ -4230,7 +4231,14 @@
+       }),
+     [comments, optimisticComments],
+   );
+-  const breadcrumbTitle = issue?.title ?? issueHeaderSeed?.title ?? "";
++  const displayStartTask = workspaceRussian() && issue?.originKind === ONBOARDING_FIRST_TASK_ORIGIN_KIND;
++  const displayComments = useMemo(() => displayStartTask ? threadComments.map(comment =>
++    comment.authorType === "agent" && (!comment.authorizationReason || comment.authorizationReason === "onboarding first-task greeting")
++      ? { ...comment, body: greetingText(comment.body) } : comment
++  ) : threadComments, [displayStartTask, threadComments]);
++  const displayInteractions = useMemo(() => displayStartTask ? interactions.map(openingInteraction) : interactions,
++    [displayStartTask, interactions]);
++  const breadcrumbTitle = issue ? taskDisplayTitle(issue) : issueHeaderSeed?.title ?? "";
+   const breadcrumbIdentifier =
+     issue?.identifier ?? issueHeaderSeed?.identifier ?? (issueId && /^[a-z0-9]+-\d+$/i.test(issueId) ? issueId : undefined);
+   const breadcrumbStatus = issue?.status ?? issueHeaderSeed?.status;
+@@ -7398,7 +7406,8 @@
+           // presentation before its workspace preference has loaded.
+           <InlineEditor
+             key={issue.id}
+-            value={issue.title}
++            value={taskDisplayTitle(issue)}
++              displayValue={taskDisplayTitle(issue)}
+             onSave={(title) => updateIssue.mutateAsync({ title })}
+             onEditingChange={handleLoadingTitleEditingChange}
+             draftKey={`issue:${issue.id}:title`}
+@@ -7568,7 +7577,7 @@
+         ))}
+         <ChevronRight className="h-3 w-3 shrink-0" />
+         <span className="text-foreground/60 truncate max-w-(--sz-200px)">
+-          {issue.title}
++          {taskDisplayTitle(issue)}
+         </span>
+       </nav>
+     ) : null;
+@@ -7610,7 +7619,8 @@
+             className="flex min-w-0 flex-1 items-baseline gap-2"
+           >
+             <InlineEditor
+-              value={issue.title}
++              value={taskDisplayTitle(issue)}
++              displayValue={taskDisplayTitle(issue)}
+               onSave={(title) => updateIssue.mutateAsync({ title })}
+               draftKey={`issue:${issue.id}:title`}
+               readCurrentValue={async () => (await issuesApi.getCore(issue.id, { cache: "no-store", fresh: true })).title}
+@@ -7758,7 +7768,7 @@
+               icon={resolvedProject?.icon ?? issue.project?.icon}
+             />
+             <span className="truncate">
+-              {resolvedProject?.name ??
++              {displayStartTask && (resolvedProject?.name ?? issue.project?.name) === "Onboarding" ? "Знакомство с Paperclip" : resolvedProject?.name ??
+                 issue.project?.name ??
+                 issue.projectId.slice(0, 8)}
+             </span>
+@@ -8033,7 +8043,8 @@
+ 
+       {!streamlinedTaskDetailEnabled ? (
+         <InlineEditor
+-          value={issue.title}
++          value={taskDisplayTitle(issue)}
++              displayValue={taskDisplayTitle(issue)}
+           onSave={(title) => updateIssue.mutateAsync({ title })}
+           draftKey={`issue:${issue.id}:title`}
+           readCurrentValue={async () => (await issuesApi.getCore(issue.id, { cache: "no-store", fresh: true })).title}
+@@ -8594,7 +8605,7 @@
+                   }
+                   canFalsePositiveRecoveryAction={canResolveBoardRecoveryAction}
+                   legacyRecoverySourceIssue={legacyRecoverySourceIssue}
+-                  comments={threadComments}
++                  comments={displayComments}
+                   commentsInitialLoading={historyExpanded ? commentsLoading : recentComments.isLoading}
+                   historyExpanded={historyExpanded}
+                   onExpandHistory={expandHistory}
+@@ -8619,7 +8630,7 @@
+                     void refetchWorkProducts();
+                   }}
+                   locallyQueuedCommentRunIds={locallyQueuedCommentRunIds}
+-                  interactions={interactions}
++                  interactions={displayInteractions}
+                   documents={issue.documentSummaries ?? []}
+                   createdTasks={threadCreatedTasks}
+                   workProducts={workProducts ?? issue.workProducts ?? []}
+--- a/src/lib/recent-tasks.ts
++++ b/src/lib/recent-tasks.ts
+@@ -8,6 +8,7 @@
+   id: string;
+   companyId: string;
+   title: string;
++  originKind?: Issue["originKind"];
+   identifier: string | null;
+   status: IssueStatus;
+   displayStatus?: Issue["displayStatus"];
+@@ -139,7 +140,7 @@
+ }
+ 
+ export function recordRecentTask(
+-  issue: Pick<Issue, "id" | "companyId" | "title" | "identifier" | "status" | "displayStatus" | "externalConversationState" | "blockerAttention" | "updatedAt" | "conversationAgentId">,
++  issue: Pick<Issue, "id" | "companyId" | "title" | "identifier" | "status" | "displayStatus" | "externalConversationState" | "blockerAttention" | "updatedAt" | "conversationAgentId" | "originKind">,
+   userId: string | null | undefined,
+   recordedAt = new Date(issue.updatedAt).getTime(),
+ ) {
+@@ -165,11 +166,13 @@
+   };
+   const entry: RecentTaskEntry = {
+     ...snapshot,
++    originKind: issue.originKind ?? snapshot.originKind,
+     // A comment can promote activity even when its task details are stale.
+     recordedAt: Math.max(activityAt, snapshot.recordedAt),
+   };
+   if (
+     existing
++    && existing.originKind === entry.originKind
+     && existing.title === entry.title
+     && existing.identifier === entry.identifier
+     && existing.status === entry.status
+--- a/src/components/CoordinatorSidebar.tsx
++++ b/src/components/CoordinatorSidebar.tsx
+@@ -1,3 +1,4 @@
++import { taskDisplayTitle } from "@/lib/workspaceTaskText";
+ import { useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from "react";
+ import { useQuery } from "@tanstack/react-query";
+ import { Inbox, Boxes, ChevronRight, CircleCheck, FolderOpen, History, LayoutDashboard, MessageCircle, MoreHorizontal, Network, Pin, PinOff, Plus, Repeat, Search, Settings, SquarePen, Unplug, type LucideIcon } from "lucide-react";
+@@ -71,7 +72,7 @@
+     </div>
+     {expanded && <div className="ml-5 border-l border-border pl-1">
+       {isPending ? <p className="px-3 py-2 text-xs text-muted-foreground" role="status">Loading tasks…</p> : error ? <p className="px-3 py-2 text-xs text-muted-foreground">Couldn’t load tasks.</p> : tasks?.length ? tasks.map(task =>
+-        <SidebarNavItem className="design-sidebar-item" key={task.id} to={`/issues/${task.identifier ?? task.id}`} label={task.title} iconNode={<StatusIcon {...taskStatusIconProps(task)} />} />)
++        <SidebarNavItem className="design-sidebar-item" key={task.id} to={`/issues/${task.identifier ?? task.id}`} label={taskDisplayTitle(task)} iconNode={<StatusIcon {...taskStatusIconProps(task)} />} />)
+         : <p className="px-3 py-2 text-xs text-muted-foreground">No tasks yet.</p>}
+     </div>}
+   </div>;
+@@ -193,7 +194,7 @@
+       {!rail && session.isSuccess && recents.length > 0 && <div className="design-sidebar-recents"><SidebarSection label="Recents">
+         <RecentNavigationList>
+         {recents.map(item => item.kind === "task"
+-          ? <SidebarNavItem className="design-sidebar-item" key={item.id} to={`/issues/${item.task.identifier ?? item.id}`} label={item.task.title} iconNode={<StatusIcon {...taskStatusIconProps(item.task)} />} />
++          ? <SidebarNavItem className="design-sidebar-item" key={item.id} to={`/issues/${item.task.identifier ?? item.id}`} label={taskDisplayTitle(item.task)} iconNode={<StatusIcon {...taskStatusIconProps(item.task)} />} />
+           : item.kind === "chat"
+             ? <SidebarNavItem className="design-sidebar-item" key={item.id} to={`/chats/${encodeURIComponent(agentRouteRef(item.agent))}`} label={item.agent.name} iconNode={<AgentAvatar agent={item.agent} size={20} />} />
+             : <ProjectRecent key={item.id} project={item.project} />)}
+--- a/src/components/TaskChatThread.tsx
++++ b/src/components/TaskChatThread.tsx
+@@ -1,3 +1,4 @@
++import { workspaceRussian } from "@/lib/workspaceTaskText";
+ import { imagePreparationReceiptIds } from "./task-chat/image-resources";
+ import type { ScrollingHistory } from "@/components/task-chat/TaskMessageScroller";
+ import { TaskChatShimmerScope } from "@/components/task-chat/TaskChatShimmer";
+@@ -468,7 +469,7 @@
+   interaction: TaskChatInteractionItem["interaction"],
+ ): string {
+   if (interaction.kind === "ask_user_questions")
+-    return interaction.title ?? "Questions";
++    return interaction.title ?? (workspaceRussian() ? "Вопросы" : "Questions");
+   if (interaction.kind === "suggest_tasks")
+     return interaction.title ?? "Suggested tasks";
+   if (interaction.kind === "request_checkbox_confirmation")
+--- a/src/components/task-chat/TaskChatComposer.tsx
++++ b/src/components/task-chat/TaskChatComposer.tsx
+@@ -1,3 +1,4 @@
++import { workspaceRussian } from "@/lib/workspaceTaskText";
+ import { useCurrentAccountGuard } from "@/hooks/useAccountBoundMutation";
+ import { ComposerFileDropTarget } from "./ComposerFileDropTarget";
+ import { AgentAvatar } from "../AgentAvatar";
+@@ -318,6 +319,11 @@
+ 
+ /** v7 per-mode placeholder copy; `{agent}` is the pending assignee's name. */
+ function modePlaceholder(mode: IssueWorkMode, agentName: string, mobile: boolean): string {
++  if (workspaceRussian()) {
++    if (mode === "planning") return mobile ? `План с ${agentName}…` : `Составьте план с ${agentName} без изменения кода…`;
++    if (mode === "ask") return mobile ? `Вопрос для ${agentName}…` : `Задайте вопрос агенту ${agentName} в режиме чтения…`;
++    return mobile ? `Сообщение для ${agentName}…` : `Напишите агенту ${agentName}, что нужно сделать…`;
++  }
+   if (mobile) {
+     if (mode === "planning") return `Plan with ${agentName}…`;
+     if (mode === "ask") return `Ask ${agentName}…`;
+--- a/src/lib/timeAgo.ts
++++ b/src/lib/timeAgo.ts
+@@ -1,3 +1,4 @@
++import { workspaceRussian, russianRelativeTime } from "@/lib/workspaceTaskText";
+ const MINUTE = 60;
+ const HOUR = 60 * MINUTE;
+ const DAY = 24 * HOUR;
+@@ -5,6 +6,7 @@
+ const MONTH = 30 * DAY;
+ 
+ export function timeAgo(date: Date | string): string {
++  if (workspaceRussian()) return russianRelativeTime(date);
+   const now = Date.now();
+   const then = new Date(date).getTime();
+   const seconds = Math.round((now - then) / 1000);
+--- a/src/lib/utils.ts
++++ b/src/lib/utils.ts
+@@ -1,3 +1,4 @@
++import { workspaceRussian, russianRelativeTime } from "@/lib/workspaceTaskText";
+ import { type ClassValue, clsx } from "clsx";
+ import { twMerge } from "tailwind-merge";
+ import { deriveAgentUrlKey, deriveProjectUrlKey, normalizeProjectUrlKey, hasNonAsciiContent } from "@paperclipai/shared";
+@@ -85,6 +86,7 @@
+ }
+ 
+ export function relativeTime(date: Date | string): string {
++  if (workspaceRussian()) return russianRelativeTime(date);
+   const now = Date.now();
+   const then = new Date(date).getTime();
+   const diffSec = Math.round((now - then) / 1000);
+--- a/src/components/coordinator/CoordinatorRelativeTime.tsx
++++ b/src/components/coordinator/CoordinatorRelativeTime.tsx
+@@ -1,3 +1,4 @@
++import { workspaceRussian, russianRelativeTime } from "@/lib/workspaceTaskText";
+ import { useSyncExternalStore } from "react";
+ 
+ const listeners = new Set<() => void>();
+@@ -20,6 +21,7 @@
+ export function coordinatorRelativeLabel(value: string | Date, clock: number) {
+   const timestamp = new Date(value).getTime();
+   if (!Number.isFinite(timestamp)) return null;
++  if (workspaceRussian()) return russianRelativeTime(value, clock);
+   const elapsed = Math.max(0, clock - timestamp);
+   if (elapsed < 60_000) return "Just now";
+   if (elapsed < 3_600_000) return `${Math.floor(elapsed / 60_000)}m ago`;
+--- a/src/lib/task-status-presentation.ts
++++ b/src/lib/task-status-presentation.ts
+@@ -1,3 +1,4 @@
++import { workspaceRussian } from "@/lib/workspaceTaskText";
+ import type { IssueBlockerAttention } from "@paperclipai/shared";
+ 
+ /**
+@@ -24,6 +25,13 @@
+ }
+ 
+ export function taskStatusLabel(status: string): string {
++  if (workspaceRussian()) {
++    const labels: Record<string, string> = {
++      backlog: "Запас задач", todo: "К выполнению", in_progress: "В работе", in_review: "На проверке",
++      blocked: "Заблокировано", done: "Готово", cancelled: "Отменено", needs_input: "Нужен ответ",
++    };
++    if (labels[status]) return labels[status];
++  }
+   return status.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+ }
+ 
+--- a/src/components/task-chat/TaskChatBubbleActions.tsx
++++ b/src/components/task-chat/TaskChatBubbleActions.tsx
+@@ -1,3 +1,4 @@
++import { workspaceRussian } from "@/lib/workspaceTaskText";
+ import type {
+   FeedbackDataSharingPreference,
+   FeedbackVoteValue,
+@@ -36,7 +37,7 @@
+   feedback?: TaskChatBubbleFeedback | null;
+ }) {
+   const { copied, failed, copy } = useCopyAction(2000);
+-  const label = failed ? "Couldn’t copy message" : "Copy message";
++  const label = workspaceRussian() ? (failed ? "Не удалось скопировать сообщение" : "Скопировать сообщение") : (failed ? "Couldn’t copy message" : "Copy message");
+ 
+   return (
+     <div className="flex items-center gap-0.5" data-testid="task-chat-bubble-actions">
+--- a/src/components/AgentBubbleActionRow.tsx
++++ b/src/components/AgentBubbleActionRow.tsx
+@@ -1,3 +1,4 @@
++import { workspaceRussian } from "@/lib/workspaceTaskText";
+ import { useEffect, useState, type ReactNode } from "react";
+ import type {
+   FeedbackDataSharingPreference,
+@@ -49,7 +50,7 @@
+  */
+ export function BubbleCopyButton({ copyText }: { copyText: string }) {
+   const { copied, failed, copy } = useCopyAction(2000);
+-  const label = failed ? "Couldn’t copy message" : "Copy message";
++  const label = workspaceRussian() ? (failed ? "Не удалось скопировать сообщение" : "Скопировать сообщение") : (failed ? "Couldn’t copy message" : "Copy message");
+ 
+   return (
+     <button
+--- a/src/components/ui/command.tsx
++++ b/src/components/ui/command.tsx
+@@ -1,3 +1,4 @@
++import { workspaceRussian } from "@/lib/workspaceTaskText";
+ "use client"
+ 
+ import * as React from "react"
+@@ -31,8 +32,8 @@
+ }
+ 
+ function CommandDialog({
+-  title = "Command Palette",
+-  description = "Search for a command to run...",
++  title = workspaceRussian() ? "Команды" : "Command Palette",
++  description = workspaceRussian() ? "Найдите команду для запуска…" : "Search for a command to run...",
+   children,
+   className,
+   showCloseButton = true,

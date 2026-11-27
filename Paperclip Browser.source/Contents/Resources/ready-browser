@@ -1,0 +1,9 @@
+#!/bin/bash
+set -euo pipefail
+curl --noproxy '*' -fsS --max-time 1 http://127.0.0.1:6080/workspace.html >/dev/null 2>&1
+# Check class only; window titles may contain account or project information.
+clients=$(xprop -root _NET_CLIENT_LIST)
+for id in $(printf '%s' "$clients" | grep -Eo '0x[0-9a-fA-F]+'); do
+    if xprop -id "$id" WM_CLASS 2>/dev/null | grep -iq firefox; then exit 0; fi
+done
+exit 1

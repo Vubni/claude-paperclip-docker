@@ -1,0 +1,36 @@
+name: claude-english
+services:
+  shell:
+    build: .
+    hostname: claude-linux
+    cpus: 1
+    mem_limit: 4g
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    volumes:
+      - home:/home/developer
+  desktop:
+    image: local/claude-workspace-desktop:2
+    build: ./desktop
+    init: true
+    hostname: claude-linux
+    cpus: 1.5
+    mem_limit: 6g
+    shm_size: 256m
+    tmpfs:
+      - /tmp:rw,nosuid,nodev,mode=1777,size=512m
+    cap_drop: [ALL]
+    security_opt:
+      - no-new-privileges:true
+      - seccomp:./desktop-seccomp.json
+    ports:
+      - "127.0.0.1::6080"
+    volumes:
+      - home:/home/developer
+    healthcheck:
+      test: ["CMD", "/opt/workspace/ready"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+volumes:
+  home:

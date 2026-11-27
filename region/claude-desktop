@@ -1,0 +1,2 @@
+#!/bin/sh
+exec /usr/bin/claude-desktop --proxy-server=http://region-gateway:3128 "$@"

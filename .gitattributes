@@ -1,0 +1,10 @@
+*.sh text eol=lf
+*.command text eol=lf
+*.py text eol=lf
+Dockerfile text eol=lf
+*.Dockerfile text eol=lf
+start-browser text eol=lf
+ready-browser text eol=lf
+start-desktop text eol=lf
+ready text eol=lf
+*.icns binary

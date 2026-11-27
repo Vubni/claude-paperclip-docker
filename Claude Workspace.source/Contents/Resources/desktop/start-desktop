@@ -1,0 +1,47 @@
+#!/bin/bash
+set -euo pipefail
+# GUI and auth clients can print callback URLs. Keep their output out of Docker logs.
+exec >/dev/null 2>&1
+umask 077
+mkdir -p "$XDG_RUNTIME_DIR"
+chmod 700 "$XDG_RUNTIME_DIR"
+if [[ -z "${DBUS_SESSION_BUS_ADDRESS:-}" ]]; then
+    exec dbus-run-session -- "$0"
+fi
+# Let the official app use Secret Service for graphical sign-in.
+gnome-keyring-daemon --start --components=secrets >/dev/null || exit 61
+Xvfb "$DISPLAY" -screen 0 1440x900x24 -nolisten tcp &
+for ((i=0; i<100; i++)); do
+    if xdpyinfo >/dev/null; then break; fi
+    sleep 0.1
+done
+xdpyinfo >/dev/null || exit 62
+openbox --config-file /opt/workspace/openbox.xml &
+# The unencrypted RFB socket never leaves the container loopback interface.
+x11vnc -display "$DISPLAY" -listen 127.0.0.1 -no6 -rfbport 5900 -forever -shared -nopw -noxdamage &
+rfb_pid=$!
+python3 - <<'PY'
+import os, secrets
+from pathlib import Path
+runtime = Path(os.environ["XDG_RUNTIME_DIR"])
+token = secrets.token_hex(32)
+(runtime / "targets").write_text(token + ": 127.0.0.1:5900\n")
+(runtime / "viewer-token").write_text(token)
+PY
+websockify --web=/usr/share/novnc --token-plugin=TokenFile --token-source="$XDG_RUNTIME_DIR/targets" 6080 &
+proxy_pid=$!
+claude-desktop 'claude://code/new' &
+app_pid=$!
+# Quit/reopen from the Mac reconnects to this same Linux desktop. If a critical
+# component exits, the next launcher invocation starts the service again.
+# Report only component codes to the launcher. Auth output stays private.
+child_status=0
+wait -n -p ended "$app_pid" "$rfb_pid" "$proxy_pid" || child_status=$?
+case "${ended:-}" in
+    "$rfb_pid") exit 63 ;;
+    "$proxy_pid") exit 64 ;;
+    "$app_pid")
+        if (( child_status == 0 )); then exit 0; fi
+        exit 65 ;;
+    *) exit 66 ;;
+esac

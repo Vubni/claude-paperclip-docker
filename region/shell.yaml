@@ -1,0 +1,15 @@
+services:
+  shell:
+    labels:
+      workspace.region.profile: ${REGION_DIGEST:?}
+    networks: [workload]
+    dns: [127.0.0.1]
+    environment:
+      TZ: ${WORKSPACE_TZ:?}
+      http_proxy: http://region-gateway:3128
+      https_proxy: http://region-gateway:3128
+      HTTP_PROXY: http://region-gateway:3128
+      HTTPS_PROXY: http://region-gateway:3128
+      NODE_USE_ENV_PROXY: "1"
+      NO_PROXY: localhost,127.0.0.1
+      no_proxy: localhost,127.0.0.1

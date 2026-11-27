@@ -1,0 +1,432 @@
+Finish setting up this Paperclip	Завершите настройку Paperclip
+Sign in / Create account	Войти или создать аккаунт
+Prefer to finish setup from the host?	Хотите завершить настройку через терминал?
+Run this command on the host that runs Paperclip to print a one-time first-admin invite URL:	Чтобы получить одноразовую ссылку для первого администратора, выполните эту команду на сервере Paperclip:
+A bootstrap invite is already active. Check your Paperclip startup logs for the first-admin URL, or run this command on the host to rotate it:	Приглашение уже действует. Найдите ссылку в журнале запуска Paperclip или выполните эту команду для выпуска новой:
+No admin has claimed this instance yet. Sign in or create your Paperclip account to become the first admin from this browser.	У этого экземпляра пока нет администратора. Войдите или создайте аккаунт Paperclip, чтобы стать первым администратором.
+No admin has claimed this instance yet. Claim it now to become the first admin and start onboarding.	У этого экземпляра пока нет администратора. Получите права администратора, чтобы продолжить настройку.
+Claim this instance	Стать администратором
+Claiming...	Назначаем администратора…
+Signed in as	Вы вошли как
+Wrong account?	Другой аккаунт?
+Switch account	Сменить аккаунт
+You're the instance admin	Вы администратор этого экземпляра
+Setup is complete. Taking you to onboarding to create your first organization...	Настройка завершена. Переходим к созданию первой организации…
+Redirecting...	Переходим…
+Continue to dashboard	Перейти к обзору
+Sign in to Paperclip	Вход в Paperclip
+Create your Paperclip account	Создайте аккаунт Paperclip
+Use your email and password to access this instance.	Для входа в этот экземпляр введите адрес почты и пароль.
+Create an account for this instance. Email confirmation is not required in v1.	Создайте локальный аккаунт. В этой версии подтверждать почту не требуется.
+Name	Имя
+Email	Электронная почта
+Password	Пароль
+Working…	Подождите…
+Sign In	Войти
+Sign in	Войти
+Sign out	Выйти
+Create Account	Создать аккаунт
+Create one	Создать аккаунт
+Need an account?	Нет аккаунта?
+Already have an account?	Уже есть аккаунт?
+Create your first organization	Создайте первую организацию
+New Organization	Новая организация
+Get started by creating an organization.	Для начала создайте организацию.
+Dashboard	Обзор
+Inbox	Входящие
+Decisions	Решения
+Status	Статус
+Conference Room	Переговорная
+Work	Работа
+Tasks	Задачи
+New Task	Новая задача
+Create task	Создать задачу
+Cases	Дела
+Routines	Регулярные задачи
+Goals	Цели
+Artifacts	Материалы
+Skills	Навыки
+Workspaces	Рабочие пространства
+Projects	Проекты
+Project	Проект
+Company	Компания
+Org	Структура
+Organizations	Организации
+Organization	Организация
+Create organization	Создать организацию
+Agents	Агенты
+Agent	Агент
+Browse agents	Найти агентов
+See all agents	Все агенты
+Edit agent	Изменить агента
+New agent	Новый агент
+Create agent	Создать агента
+Connectors	Интеграции
+Timeline	Хронология
+Costs	Расходы
+Activity	Действия
+Commentary	Комментарии
+Settings	Настройки
+General	Основные
+Profile	Профиль
+Members	Участники
+Invites	Приглашения
+Secrets	Секреты
+Environments	Окружения
+Connections	Подключения
+Access	Доступ
+Heartbeats	Циклы запуска
+Export	Экспорт
+Import	Импорт
+Experimental	Экспериментальные функции
+Plugins	Плагины
+Adapters	Адаптеры
+Browse	Обзор
+Review	Проверка
+Developer	Для разработчиков
+All apps	Все приложения
+Invite	Пригласить
+Documentation	Документация
+Search	Поиск
+Share feedback	Оставить отзыв
+Alphabetical	По алфавиту
+Recent	Недавние
+Open budgets	Открыть бюджеты
+Agents Enabled	Включено агентов
+Tasks In Progress	Задачи в работе
+Month Spend	Расходы за месяц
+Pending Approvals	Ожидают согласования
+Run Activity	Активность запусков
+Last 14 days	Последние 14 дней
+Tasks by Status	Задачи по статусам
+Success Rate	Доля успешных запусков
+Recent Activity	Последние действия
+Recent Tasks	Недавние задачи
+No tasks yet.	Задач пока нет.
+No tasks	Нет задач
+No runs yet	Запусков пока нет
+Succeeded	Успешно
+Recovered	Восстановлено
+Failed	Сбой
+Other	Другое
+Review agents	Проверить агентов
+You have no agents.	У вас пока нет агентов.
+Create one here	Создать агента
+Next	Далее
+Back	Назад
+Continue	Продолжить
+Finish	Завершить
+Skip	Пропустить
+Skip for now	Пропустить пока
+Agent name	Имя агента
+Model source	Источник модели
+API key	Ключ API
+Enter API key here	Введите ключ API
+Use a different API key	Использовать другой ключ API
+Use a custom gateway	Использовать свой шлюз
+Custom gateway connection	Подключение к своему шлюзу
+Retry sign-in	Повторить вход
+Submit code	Отправить код
+Connecting	Подключение
+Connect	Подключить
+Advanced	Дополнительно
+Retry setup	Повторить настройку
+Manual debug	Ручная диагностика
+Passed	Успешно
+Claude subscription	Подписка Claude
+Save	Сохранить
+Save changes	Сохранить изменения
+Cancel	Отмена
+Close	Закрыть
+Edit	Изменить
+Delete	Удалить
+Remove	Убрать
+Create	Создать
+Add	Добавить
+Retry	Повторить
+Copy	Копировать
+Refresh	Обновить
+Loading...	Загрузка…
+Loading…	Загрузка…
+Description	Описание
+Title	Название
+Overview	Обзор
+Details	Подробности
+Configuration	Конфигурация
+Instructions	Инструкции
+Model	Модель
+Permissions	Разрешения
+Budget	Бюджет
+Budgets	Бюджеты
+Approvals	Согласования
+Priority	Приоритет
+Assignee	Исполнитель
+Due date	Срок
+Comments	Комментарии
+History	История
+All	Все
+Active	Активно
+Paused	Приостановлено
+Done	Готово
+In progress	В работе
+Blocked	Заблокировано
+What is the name of your organization?	Как называется ваша организация?
+e.g. Northwind Labs	Например, Северная лаборатория
+Create your first agent	Создайте первого агента
+Connect a model	Подключите модель
+Let's get started...	Всё готово к работе
+Paperclip works with your subscription or API keys.	Paperclip работает с вашей подпиской или ключами API.
+e.g. Chief of staff	Например, руководитель штаба
+Get started	Начать работу
+Creating...	Создаём…
+Launching...	Запускаем…
+Testing…	Проверяем…
+Waiting for auth…	Ожидаем авторизации…
+Waiting for code…	Ожидаем код…
+Choose a model for your saved connection	Выберите модель для сохранённого подключения
+Choose a saved API key or enter a new one	Выберите сохранённый ключ API или введите новый
+An existing provider connection is available.	Доступно сохранённое подключение к провайдеру.
+Retry loading connection	Повторить загрузку подключения
+Loading your saved gateway connection…	Загружаем сохранённое подключение к шлюзу…
+Gateway connection saved. Choose a model, then Connect to test it and finish setting up your agent.	Подключение к шлюзу сохранено. Выберите модель и нажмите «Подключить», чтобы проверить её и завершить настройку агента.
+Your saved gateway connection could not be loaded. Retry to choose a model and connect your agent.	Не удалось загрузить сохранённое подключение к шлюзу. Повторите попытку, чтобы выбрать модель и подключить агента.
+This environment does not support browser sign-in. Choose another sign-in environment or connect with an API key.	Эта среда не поддерживает вход через браузер. Выберите другую среду или подключитесь с помощью ключа API.
+Claude and Codex are unavailable on this instance. Ask an administrator to enable one, or exit setup and choose New Agent on the Agents page to use another provider.	Claude и Codex недоступны. Попросите администратора включить один из них или выйдите из мастера и добавьте агента с другим провайдером на странице агентов.
+New task	Новая задача
+Chat	Чат
+Chats	Чаты
+Recents	Недавние
+More	Ещё
+More workspace pages	Другие разделы
+Questions	Вопросы
+Question	Вопрос
+Unanswered question	Ожидает ответа
+Pinned	Закреплённые
+Unpin	Открепить
+Pin	Закрепить
+Audit	Журнал действий
+Global search	Поиск по всем разделам
+Search tasks, agents, projects	Поиск задач, агентов и проектов
+Try again	Попробовать ещё раз
+None	Нет
+Responsible	Ответственный
+Sort	Сортировка
+Environment	Окружение
+Clear	Очистить
+New	Создать
+Download file	Скачать файл
+Group	Группа
+Input	Ввод
+Harness	Среда выполнения
+Workspace	Рабочее пространство
+Private project	Закрытый проект
+Webhook URL	Адрес вебхука
+Download	Скачать
+Branch	Ветка
+Adapter	Адаптер
+More actions	Другие действия
+Label	Метка
+Filters	Фильтры
+List view	Список
+Updated	Обновлено
+Columns	Столбцы
+Copy message	Скопировать сообщение
+Thinking effort	Глубина размышления
+Follow-up	Следующий шаг
+Open	Открыть
+Dismiss	Скрыть
+Loading tasks…	Загружаем задачи…
+Created	Создано
+Archive	В архив
+Search tasks	Поиск задач
+Needs next step	Нужен следующий шаг
+Unsaved changes	Несохранённые изменения
+Helpful	Полезно
+Needs work	Нужна доработка
+Reason	Причина
+Start	Начать
+Restart	Перезапустить
+Unassigned	Без исполнителя
+New folder	Новая папка
+Connection	Подключение
+Comment deleted	Комментарий удалён
+User	Пользователь
+Copy code	Скопировать код
+Role	Роль
+Default	По умолчанию
+Visibility	Видимость
+Search tasks...	Найти задачу…
+Board view	Доска
+Filter	Фильтр
+Always allow	Всегда разрешать
+Add a short note	Добавьте короткое примечание
+Choose	Выбрать
+Open in new tab	Открыть в новой вкладке
+Select revision	Выбрать версию
+View run	Посмотреть запуск
+Copied	Скопировано
+Task status	Статус задачи
+Environment variables	Переменные окружения
+Run Policy	Правила запуска
+Decision history	История решений
+Context	Контекст
+My primary agent	Мой основной агент
+Add instructions...	Добавьте инструкции…
+Conversation task	Задача из беседы
+Unfiled	Без папки
+Reset to agent default	Вернуть настройки агента
+Routine	Регулярная задача
+Chat with an agent	Чат с агентом
+Project paused by budget	Проект приостановлен из-за бюджета
+Fields	Поля
+Properties	Свойства
+Copy link	Скопировать ссылку
+Rename	Переименовать
+Discard changes	Отменить изменения
+Content	Содержимое
+Retry saving	Повторить сохранение
+Schedule	Расписание
+Clear search	Очистить поиск
+No project	Без проекта
+State	Состояние
+Triggers	Условия запуска
+Last run	Последний запуск
+Retry now	Повторить сейчас
+Now running	Выполняется
+Filter agents	Фильтр агентов
+Version	Версия
+This task needs a next step	Выберите следующий шаг для этой задачи
+No responsible	Ответственный не назначен
+Me	Я
+Connect GitHub	Подключить GitHub
+View details	Подробнее
+Output	Вывод
+Clear all	Очистить всё
+Type	Тип
+Reject	Отклонить
+Clear selection	Снять выделение
+Project name	Название проекта
+What could have been better?	Что можно улучшить?
+Action	Действие
+External objects	Внешние объекты
+Stop	Остановить
+Reset defaults	Восстановить настройки по умолчанию
+Finish setup	Завершить настройку
+Run	Запустить
+Value	Значение
+System	Система
+Result	Результат
+Delete comment	Удалить комментарий
+Loading decision…	Загружаем решение…
+Labels	Метки
+Allowed projects	Разрешённые проекты
+No default	Не задано
+Recent activity	Недавние действия
+Open in tab	Открыть во вкладке
+Newest first	Сначала новые
+Oldest first	Сначала старые
+Authentication	Вход
+AI connection	Подключение к ИИ
+Add label	Добавить метку
+Blocked by	Что мешает выполнению
+Execution	Выполнение
+Change default model	Сменить модель по умолчанию
+Secret	Секрет
+Close side panel	Закрыть боковую панель
+Open tabs	Открытые вкладки
+Folders	Папки
+Check connection	Проверить подключение
+Provider	Провайдер
+Task	Задача
+Starred projects	Избранные проекты
+Remove from starred	Убрать из избранного
+Leave project	Покинуть проект
+Resize sidebar	Изменить ширину панели
+Snooze	Отложить
+Completed	Завершено
+Write a comment…	Напишите комментарий…
+Open sidebar	Открыть боковую панель
+Revisions	Версии
+Select an option	Выберите вариант
+Write your answer…	Напишите ответ…
+Suggested tasks	Предложенные задачи
+More task actions	Действия с задачей
+Open account menu	Меню аккаунта
+Workspace navigation	Навигация
+Select assignee	Выбрать исполнителя
+Select model and effort	Выбрать модель и глубину размышления
+Show properties	Показать свойства
+Hide properties	Скрыть свойства
+Add to composer	Добавить к сообщению
+Send	Отправить
+Undo	Отменить
+Skip to Main Content	Перейти к содержимому
+Task people	Участники задачи
+unread chats	непрочитанные чаты
+Start sign-in again	Начать вход заново
+Sign in to	Войти в
+then return here	и вернитесь сюда
+then come back and enter authorization code	и введите здесь код авторизации
+by providing the authorization code below	и укажите код, показанный ниже
+This sign-in expired	Время для входа истекло
+Sign-in didn’t finish	Вход не завершён
+Preparing sign-in…	Подготавливаем вход…
+Check again	Проверить ещё раз
+Copied!	Скопировано!
+Copy failed	Не удалось скопировать
+Copy sign-in command	Скопировать команду для входа
+What would you like to do?	С чего хотите начать?
+Finish signing in in the Google browser window, then return here.	Завершите вход в окне Google и вернитесь сюда.
+Run this in a terminal on that machine and finish signing in in your browser. We’ll check automatically when you return.	Выполните команду в терминале на том компьютере и завершите вход в браузере. Когда вы вернётесь, Paperclip проверит вход автоматически.
+Answered	Ответ получен
+Submit answers	Отправить ответы
+Save response	Сохранить ответ
+Pending input	Ожидает ответа
+Search decisions or task IDs…	Поиск по решениям или номеру задачи…
+No grouping	Без группировки
+All agents	Все агенты
+All projects	Все проекты
+All outcomes	Все результаты
+By task	По задачам
+By project	По проектам
+By agent	По агентам
+Cancel question	Отменить вопрос
+Cancelling...	Отменяем…
+Submit once after you finish the full form.	Ответьте на все вопросы и отправьте форму.
+Other agents	Другие агенты
+Other decisions	Другие решения
+Search decision history	Поиск по истории решений
+Filter decision history by agent	История решений по агенту
+Filter decision history by project	История решений по проекту
+Filter decision outcomes	Фильтр по результату
+Group decision history	Группировка истории решений
+Sort decision history	Сортировка истории решений
+Filter decisions by agent	Решения по агенту
+Filter decisions by project	Решения по проекту
+Group decisions	Группировка решений
+Sort decisions	Сортировка решений
+Decisions controls	Фильтры и сортировка решений
+Search decisions	Поиск решений
+Loading decisions…	Загружаем решения…
+Decision history could not be loaded.	Не удалось загрузить историю решений.
+No decisions match these filters.	Решений с такими параметрами нет.
+Decisions could not be loaded.	Не удалось загрузить решения.
+No open decisions match these filters.	Нет открытых решений с такими параметрами.
+You're caught up.	Вы всё просмотрели.
+Recent Decisions	Недавние решения
+Recent decisions could not be loaded.	Не удалось загрузить недавние решения.
+Show more decisions	Показать ещё решения
+Load more decisions	Загрузить ещё решения
+Open decision history	Открыть историю решений
+Open to review	Открыть для проверки
+Choose a company to see its decisions.	Выберите компанию, чтобы увидеть её решения.
+Open task	Открыть задачу
+Choose how this task continues	Выберите следующий шаг по задаче
+Mark task done	Завершить задачу
+This task is still in review with no active reviewer or continuation. Return it to work, request changes, or mark the task done.	Задача на проверке, но проверяющий не назначен. Верните её в работу, запросите изменения или завершите задачу.
+Task questions couldn’t load.	Не удалось загрузить вопросы по задаче.
+This decision is no longer available — it may have been resolved elsewhere.	Это решение уже недоступно. Возможно, ответ дали в другом окне.
+Changes requested	Запрошены изменения
+Decided	Решение принято
+Approved	Одобрено
+Expired	Срок истёк

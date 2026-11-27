@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="ru"><meta charset="utf-8"><title>Экран Linux</title>
+<style>
+html,body,#screen { width:100%; height:100%; margin:0; overflow:hidden; background:#242321 }
+#status { position:absolute; inset:0; display:grid; place-content:center; color:#fff; font:16px system-ui }
+#status[hidden] { display:none }
+</style>
+<div id="screen"></div><div id="status" role="status">Подключение к окну Linux…</div>
+<script type="module">
+import RFB from './core/rfb.js';
+const status = document.getElementById('status');
+const secret = window.workspaceToken;
+delete window.workspaceToken;
+const screen = new RFB(document.getElementById('screen'),
+    'ws://' + location.host + '/websockify?token=' + encodeURIComponent(secret));
+screen.scaleViewport = true;
+screen.addEventListener('connect', () => { status.hidden = true; screen.focus(); });
+screen.addEventListener('disconnect', () => {
+    status.textContent = 'Связь с Linux прервана. Закройте и снова откройте окно просмотра.';
+    status.hidden = false;
+});
+window.pasteIntoLinux = text => {
+    screen.clipboardPasteFrom(text);
+    screen.sendKey(0xffe3, 'ControlLeft', true);
+    screen.sendKey(0x76, 'KeyV');
+    screen.sendKey(0xffe3, 'ControlLeft', false);
+};
+</script></html>

@@ -1,0 +1,134 @@
+--- a/src/components/task-chat/ComposerRunSettingsPicker.tsx
++++ b/src/components/task-chat/ComposerRunSettingsPicker.tsx
+@@ -1,6 +1,7 @@
+-import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type ReactNode, type Ref } from "react";
++import { WorkspaceEffort, workspaceEffortLabel } from "@/components/WorkspaceEffort";
++import { useEffect, useLayoutEffect, useRef, useState, type ReactNode, type Ref } from "react";
+ import { useQuery } from "@tanstack/react-query";
+-import { ArrowLeft, Check, ChevronDown, Plus, RotateCcw, Search, X, Zap } from "lucide-react";
++import { ArrowLeft, Check, ChevronDown, ChevronRight, Plus, RotateCcw, Search, X, Zap } from "lucide-react";
+ import { aiRuntimeConnectionBindingSchema, agentHarnessType, type Agent, type IssueAssigneeAdapterOverrides } from "@paperclipai/shared";
+ import { agentsApi, type AdapterModel } from "@/api/agents";
+ import { queryKeys } from "@/lib/queryKeys";
+@@ -13,7 +14,7 @@
+ import { Popover, PopoverAnchor, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+ import {
+   composerCatalogProvider, composerDefaultModel, composerEfforts, composerFastAvailable, DEFAULT_COMPOSER_RUN_SETTINGS,
+-  EFFORT_LABELS, readComposerRunSettings, supportsComposerModel,
++  readComposerRunSettings, supportsComposerModel,
+   type ComposerRunSettings,
+ } from "./composer-run-settings";
+ import "./composer-run-settings.css";
+@@ -148,8 +149,7 @@
+   const modelName = models.find((item) => item.id === model)?.label ?? model ?? "";
+   const choices = composerEfforts(agent, model, models.map((item) => item.id));
+   const effort = selected.effort && choices.includes(selected.effort) ? selected.effort : null;
+-  const effortIndex = effort ? choices.indexOf(effort) + 1 : 0;
+-  const effortLabel = effort ? EFFORT_LABELS[effort] ?? effort : "Default";
++  const effortLabel = workspaceEffortLabel(effort ?? "");
+   const fastAvailable = composerFastAvailable(agent, model);
+   const effortChoicesKey = choices.join(",");
+   useEffect(() => {
+@@ -239,23 +239,21 @@
+       {closeButton}
+     </div>
+     {modelSupported ? <>
+-      <button type="button" aria-label="Choose exact model" onClick={() => setView("models")} className="mt-3 flex w-full items-center gap-2 rounded-md px-1 py-1 text-left hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
++      {choices.length ? <div className="mt-2">
++        <WorkspaceEffort choices={choices} value={effort ?? ""} ariaLabel={agent?.adapterType === "pi_local" ? "Thinking" : "Effort"}
++          onChange={value => {
++            rememberComposerEffort(companyId, value || null);
++            onSettingsChange({ ...selected, effort: value || null });
++          }}
++          leading={fastAvailable ? <button type="button" aria-label="Fast mode" aria-pressed={selected.fast} title="Fast mode" onClick={() => onSettingsChange({ ...selected, fast: !selected.fast })} className={cn("grid size-8 shrink-0 place-items-center rounded-md hover:bg-accent", selected.fast ? "composer-run-settings-accent bg-accent" : "text-muted-foreground")}><Zap className="size-4" /></button> : null}
++          trailing={<button type="button" aria-label="Reset to agent default" title="Reset to agent default" disabled={!changed} onClick={reset} className="grid size-8 shrink-0 place-items-center rounded-md text-muted-foreground hover:bg-accent disabled:opacity-40"><RotateCcw className="size-4" /></button>}>
++          <button type="button" aria-label="Choose exact model" onClick={() => setView("models")} className="workspace-effort-model">
++            <span className="truncate">{modelName || "Default"}</span><ChevronRight className="size-3.5 shrink-0" aria-hidden />
++          </button>
++        </WorkspaceEffort>
++      </div> : <button type="button" aria-label="Choose exact model" onClick={() => setView("models")} className="mt-3 flex w-full items-center gap-2 rounded-md px-1 py-1 text-left hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+         <span className="min-w-0 flex-1"><span className="block text-xs text-muted-foreground">Model</span><span className="block truncate text-sm font-medium">{modelName || "Default"}</span></span><ChevronDown className="size-4 shrink-0 text-muted-foreground" aria-hidden />
+-      </button>
+-      {choices.length ? <div className="mt-3">
+-        <div className="flex items-center gap-2">
+-          {fastAvailable ? <button type="button" aria-label="Fast mode" aria-pressed={selected.fast} title="Fast mode" onClick={() => onSettingsChange({ ...selected, fast: !selected.fast })} className={cn("grid size-8 shrink-0 place-items-center rounded-md hover:bg-accent", selected.fast ? "composer-run-settings-accent bg-accent" : "text-muted-foreground")}><Zap className="size-4" /></button> : <span className="size-8 shrink-0" aria-hidden />}
+-          <label htmlFor="composer-run-effort" data-testid="selected-effort" className="composer-run-settings-accent min-w-0 flex-1 text-center text-sm font-medium">{effortLabel}</label>
+-          <button type="button" aria-label="Reset to agent default" title="Reset to agent default" disabled={!changed} onClick={reset} className="grid size-8 shrink-0 place-items-center rounded-md text-muted-foreground hover:bg-accent disabled:opacity-40"><RotateCcw className="size-4" /></button>
+-        </div>
+-        <input id="composer-run-effort" type="range" min={0} max={choices.length} step={1} value={effortIndex} aria-label={agent?.adapterType === "pi_local" ? "Thinking" : "Effort"} aria-valuetext={effortLabel}
+-          onChange={(event) => {
+-            const nextEffort = Number(event.target.value) === 0 ? null : choices[Number(event.target.value) - 1]!;
+-            rememberComposerEffort(companyId, nextEffort);
+-            onSettingsChange({ ...selected, effort: nextEffort });
+-          }}
+-          className="composer-run-effort-range mt-3 w-full" style={{ "--fill": `${effortIndex / choices.length * 100}%` } as CSSProperties} />
+-      </div> : null}
++      </button>}
+     </> : agent ? <div className="mt-3 rounded-md bg-muted/40 px-3 py-2 text-xs text-muted-foreground" data-testid="model-unavailable">{unavailableModelReason(agent)}</div> : null}
+   </div> : view === "agents" ? <div className="composer-run-settings-list-view p-2">
+     <div className="flex items-center gap-2 px-1 py-1.5"><span className="min-w-0 flex-1 text-xs font-semibold">Choose assignee</span>{closeButton}</div>
+--- a/src/components/new-agent/NewAgentSetup.tsx
++++ b/src/components/new-agent/NewAgentSetup.tsx
+@@ -7,7 +7,7 @@
+ import { AiConnectionField, aiProviderForAdapter } from "../ai-connections/AiConnectionField";
+ import type { AiConnectionBinding } from "@paperclipai/shared";
+ import type { AgentRunner, AgentRunnerChoice } from "@paperclipai/shared";
+-import { SelectPopover } from "../ui/select";
++import { WorkspaceEffort } from "../WorkspaceEffort";
+ import { DEFAULT_CODEX_LOCAL_MODEL } from "@paperclipai/adapter-codex-local";
+ import {
+   SETUP_CREDENTIAL_KEYS,
+@@ -1239,9 +1239,8 @@
+                             )}
+                             {efforts.length > 0 && (
+                               <Field label="Thinking effort">
+-                                {brandType === "codex_local" ? <SelectPopover aria-label="Thinking effort" value={effort}
+-                                  onValueChange={value => { setEffort(value); resetTest(); }}
+-                                  options={[{ value: "", label: "Auto" }, ...efforts.map(value => ({ value, label: value }))]} /> : <NativeSelect
++                                {brandType === "codex_local" ? <WorkspaceEffort choices={efforts} value={effort}
++                                  onChange={value => { setEffort(value); resetTest(); }} /> : <NativeSelect
+                                   aria-label="Thinking effort"
+                                   value={effort}
+                                   onChange={(event) => {
+--- a/src/components/AgentConfigForm.tsx
++++ b/src/components/AgentConfigForm.tsx
+@@ -1,3 +1,4 @@
++import { WorkspaceEffort } from "./WorkspaceEffort";
+ import { useAdapterLoginCancellation } from "./useAdapterLoginCancellation";
+ import { ACCOUNT_BOUND_MODEL_DISCOVERY_QUERY_OPTIONS, isAccountBoundAcpxAgent } from "@/lib/native-model-catalog";
+ import { useConnectionModels } from "./ai-connections/useConnectionModels";
+@@ -2027,6 +2028,7 @@
+               {showThinkingEffort && (
+                 <>
+                   <ThinkingEffortDropdown
++                    slider={harnessType === "codex_local"}
+                     value={currentThinkingEffort}
+                     options={thinkingEffortOptions}
+                     onChange={(v) =>
+@@ -4403,21 +4405,24 @@
+ function ThinkingEffortDropdown({
+   value,
+   options,
++  slider,
+   onChange,
+   open,
+   onOpenChange,
+ }: {
+   value: string;
++  slider?: boolean;
+   options: ReadonlyArray<{ id: string; label: string }>;
+   onChange: (id: string) => void;
+   open: boolean;
+   onOpenChange: (open: boolean) => void;
+ }) {
+   return <Field label="Thinking effort" hint={help.thinkingEffort}>
+-    <SelectPopover aria-label="Thinking effort" value={value} onValueChange={onChange}
++    {slider ? <WorkspaceEffort choices={options.map(option => option.id)} value={value} onChange={onChange} />
++      : <SelectPopover aria-label="Thinking effort" value={value} onValueChange={onChange}
+       open={open} onOpenChange={onOpenChange}
+       options={options.map(option => ({ value: option.id, label: option.label,
+         suffix: option.id ? <span className="text-xs text-muted-foreground font-mono">{option.id}</span> : undefined,
+-      }))} />
++      }))} />}
+   </Field>;
+ }

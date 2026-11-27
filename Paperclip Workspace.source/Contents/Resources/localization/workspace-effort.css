@@ -1,0 +1,75 @@
+.workspace-effort {
+  --effort-blue: #377fee;
+  --effort-ink: light-dark(#225eb6, #68abff);
+  --effort-thumb: 25px;
+  min-width: 0;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 8px 12px 7px;
+  background: color-mix(in srgb, var(--popover) 82%, var(--muted));
+}
+.dark .workspace-effort { --effort-ink: #68abff; }
+.workspace-effort-heading {
+  display: grid;
+  grid-template-columns: 2rem minmax(0, 1fr) 2rem;
+  align-items: center;
+  min-height: 1.8rem;
+  text-align: center;
+}
+.workspace-effort-heading label { color: var(--effort-ink); font-size: 1rem; font-weight: 600; line-height: 1.25; }
+.workspace-effort-heading button { border-radius: 50%; }
+.workspace-effort-heading button[aria-pressed="true"] { color: var(--effort-ink); }
+.workspace-effort-model {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: .2rem;
+  max-width: 100%;
+  min-height: 25px;
+  margin: 0 auto;
+  padding: 0 .5rem;
+  border-radius: 6px;
+  color: var(--muted-foreground);
+  font-size: .875rem;
+}
+.workspace-effort-model:hover { background: var(--accent); color: var(--foreground); }
+.workspace-effort-control { position: relative; height: 36px; margin-top: 3px; }
+.workspace-effort-rail {
+  position: absolute;
+  inset: 50% 0 auto;
+  height: 18px;
+  transform: translateY(-50%);
+  overflow: hidden;
+  border-radius: 99px;
+  background: color-mix(in srgb, var(--foreground) 16%, var(--popover));
+}
+.workspace-effort-stops {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  position: absolute;
+  inset: 0 calc(var(--effort-thumb) / 2);
+}
+.workspace-effort-stops::before {
+  content: "";
+  position: absolute;
+  inset: 0 calc(100% - var(--progress)) 0 calc(-1 * var(--effort-thumb));
+  background: var(--effort-blue);
+}
+.workspace-effort-stops i { position: relative; width: 0; }
+.workspace-effort-stops i::after {
+  content: "";
+  display: block;
+  width: 4px;
+  height: 4px;
+  margin-left: -2px;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--foreground) 35%, transparent);
+}
+.workspace-effort-control input { position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; appearance: none; background: transparent; cursor: pointer; }
+.workspace-effort-control input::-webkit-slider-thumb { appearance: none; box-sizing: border-box; width: var(--effort-thumb); height: var(--effort-thumb); border: 2px solid var(--effort-blue); border-radius: 50%; background: white; }
+.workspace-effort-control input::-moz-range-thumb { box-sizing: border-box; width: var(--effort-thumb); height: var(--effort-thumb); border: 2px solid var(--effort-blue); border-radius: 50%; background: white; }
+.workspace-effort :focus-visible { outline: 2px solid var(--effort-ink); outline-offset: 1px; border-radius: 6px; }
+@media (forced-colors: active) {
+  .workspace-effort-control input { appearance: auto; }
+}

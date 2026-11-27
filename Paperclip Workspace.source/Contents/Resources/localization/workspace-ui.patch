@@ -1,0 +1,282 @@
+--- a/src/api/auth.ts
++++ b/src/api/auth.ts
+@@ -26,6 +26,7 @@
+ }
+ 
+ export class AuthApiError extends Error {
++  retryAfterMs?: number;
+   status: number;
+   code: string | null;
+   body: unknown;
+@@ -141,7 +142,15 @@
+     const recovery = tenantSessionRecovery.recoverIfNeeded(res.status, payload);
+     if (recovery) return recovery;
+     logAuthHttpError("POST", path, res.status, res.statusText, payload);
+-    throw extractAuthError(payload as AuthErrorBody, res.status);
++    const error = extractAuthError(payload as AuthErrorBody, res.status);
++    if (res.status === 429) {
++      const value = res.headers.get("X-Retry-After") ?? res.headers.get("Retry-After");
++      const seconds = value && /^\d+$/.test(value.trim()) ? Number(value) : NaN;
++      const date = value ? Date.parse(value) : NaN;
++      error.retryAfterMs = Number.isFinite(seconds) ? seconds * 1000
++        : Number.isFinite(date) ? Math.max(0, date - Date.now()) : 10_000;
++    }
++    throw error;
+   }
+   return payload;
+ }
+--- a/src/components/SidebarAccountMenu.tsx
++++ b/src/components/SidebarAccountMenu.tsx
+@@ -25,6 +25,7 @@
+ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+ import { cn, SIDEBAR_RAIL_HIDDEN_LABEL } from "../lib/utils";
++import { LanguageSwitch } from "./LanguageSwitch";
+ import { ThemeToggle } from "./ThemeToggle";
+ import { SidebarServerInfo } from "./SidebarServerInfo";
+ import { TruncatedText } from "./TruncatedText";
+@@ -257,6 +258,7 @@
+                 external
+                 onClick={() => setOpen(false)}
+               />
++              <LanguageSwitch />
+               <ThemeToggle variant="compact-menu-action" onAfterToggle={() => setOpen(false)} />
+               {deploymentMode === "authenticated" ? (
+                 <button
+--- a/src/i18n/index.ts
++++ b/src/i18n/index.ts
+@@ -5,7 +5,7 @@
+ 
+ const i18nextOptions: InitOptions = {
+   resources: i18nextResources,
+-  lng: DEFAULT_LOCALE,
++  lng: document.documentElement.lang,
+   fallbackLng: DEFAULT_LOCALE,
+   supportedLngs: supportedLocales,
+   defaultNS: "translation",
+--- a/src/pages/Auth.tsx
++++ b/src/pages/Auth.tsx
+@@ -1,7 +1,9 @@
+-import { useEffect, useMemo, useState } from "react";
++import { useEffect, useMemo, useRef, useState } from "react";
+ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+ import { useNavigate, useSearchParams } from "@/lib/router";
+-import { authApi } from "../api/auth";
++import { LanguageSwitch } from "../components/LanguageSwitch";
++import { useAuthCooldown } from "../hooks/useAuthCooldown";
++import { AuthApiError, authApi } from "../api/auth";
+ import { healthApi } from "../api/health";
+ import { describeError } from "../api/errors";
+ import { CloudSignIn } from "@/components/CloudSignIn";
+@@ -27,6 +29,8 @@
+   const [email, setEmail] = useState("");
+   const [password, setPassword] = useState("");
+   const [error, setError] = useState<string | null>(null);
++  const submitting = useRef(false);
++  const { secondsLeft, startCooldown } = useAuthCooldown(mode);
+   const errorId = "auth-error";
+ 
+   const nextPath = useMemo(
+@@ -81,7 +85,15 @@
+       navigate(nextPath, { replace: true });
+     },
+     onError: (err) => {
+-      setError(describeError(err).body);
++      if (err instanceof AuthApiError && err.retryAfterMs !== undefined) {
++        startCooldown(err.retryAfterMs);
++        setError(null);
++      } else {
++        setError(describeError(err).body);
++      }
++    },
++    onSettled: () => {
++      submitting.current = false;
+     },
+   });
+ 
+@@ -120,7 +132,8 @@
+ 
+   return (
+     <div className="fixed inset-0 flex bg-background">
+-      <div className="absolute top-4 right-4 z-10">
++      <div className="absolute top-4 right-4 z-10 flex items-center gap-2">
++        <LanguageSwitch disabled={mutation.isPending} />
+         <ThemeToggle />
+       </div>
+       {/* Left half — form */}
+@@ -145,11 +158,12 @@
+             action={mode === "sign_up" ? "/api/auth/sign-up/email" : "/api/auth/sign-in/email"}
+             onSubmit={(event) => {
+               event.preventDefault();
+-              if (mutation.isPending) return;
++              if (submitting.current || secondsLeft > 0) return;
+               if (!canSubmit) {
+                 setError("Please fill in all required fields.");
+                 return;
+               }
++              submitting.current = true;
+               mutation.mutate();
+             }}
+           >
+@@ -204,6 +218,13 @@
+                 aria-describedby={error ? errorId : undefined}
+               />
+             </div>
++            {secondsLeft > 0 && (
++              <p role="status" className="text-xs text-muted-foreground">
++                {document.documentElement.lang === "ru"
++                  ? `Слишком много попыток. Повторите через ${secondsLeft} с.`
++                  : `Too many attempts. Try again in ${secondsLeft} s.`}
++              </p>
++            )}
+             {error && (
+               <p id={errorId} role="alert" className="text-xs text-destructive">
+                 {error}
+@@ -211,8 +232,8 @@
+             )}
+             <Button
+               type="submit"
+-              disabled={mutation.isPending}
+-              aria-disabled={!canSubmit || mutation.isPending}
++              disabled={mutation.isPending || secondsLeft > 0}
++              aria-disabled={!canSubmit || mutation.isPending || secondsLeft > 0}
+               className={`w-full ${!canSubmit && !mutation.isPending ? "opacity-50" : ""}`}
+             >
+               {mutation.isPending
+@@ -228,6 +249,7 @@
+             <button
+               type="button"
+               className="font-medium text-foreground underline underline-offset-2"
++              disabled={mutation.isPending}
+               onClick={() => {
+                 setError(null);
+                 setMode(mode === "sign_in" ? "sign_up" : "sign_in");
+--- a/src/components/OnboardingWizard.tsx
++++ b/src/components/OnboardingWizard.tsx
+@@ -15,6 +15,7 @@
+ import { useConnectionModelsState } from "./ai-connections/useConnectionModels";
+ import type { AiConnectionBinding } from "@paperclipai/shared";
+ import { storeProviderApiKey } from "../lib/provider-credential";
++import { LanguageSwitch } from "./LanguageSwitch";
+ import { SavedProviderKeySelect, useSavedProviderKeys } from "./onboarding/SavedProviderKeySelect";
+ import { OnboardingGatewaySetup } from "./onboarding/OnboardingGatewaySetup";
+ import { randomAgentAppearance, resolveAgentAppearance, agentAppearanceSchema } from "@paperclipai/shared";
+@@ -1398,7 +1399,7 @@
+   */
+   const connectCollapsed =
+     connectPhase !== "idle" && connectPhase !== "unwindRow" && sourceSelected;
+-  const connectProgress = sourceSelected && !setupPrepared && !createdAgentId && !setupError ? "Creating your agent…" : adapterEnvLoading ? "Testing connection…" : loading ? "Connecting…" : null;
++  const connectProgress = sourceSelected && !setupPrepared && !createdAgentId && !setupError ? (document.documentElement.lang === "ru" ? "Создаём агента…" : "Creating your agent…") : adapterEnvLoading ? (document.documentElement.lang === "ru" ? "Проверяем подключение…" : "Testing connection…") : loading ? (document.documentElement.lang === "ru" ? "Подключаемся…" : "Connecting…") : null;
+   const hasSavedSubscription = Boolean(savedSubscription || savedKeys.storedLogin.data ||
+     (credentialMode !== "api" && managedBindingForStep()));
+   const connectHasCard = credentialMode === "api" || connectStepNeedsLogin || connectStepHasNoSandbox || Boolean(connectProgress);
+@@ -1554,7 +1555,7 @@
+         : connectPhase === "ready"
+           ? connectStepNeedsLogin
+             ? {
+-                label: `Sign in to ${connectSourceLabel}`,
++                label: document.documentElement.lang === "ru" ? `Войти в ${connectSourceLabel}` : `Sign in to ${connectSourceLabel}`,
+                 icon: "none",
+                 disabled: !connectAuthUrl,
+               }
+@@ -2828,6 +2829,7 @@
+           className="fixed inset-0 z-50 flex"
+           onKeyDown={handleKeyDown}
+         >
++          {step === 1 && <div className="absolute right-4 top-4 z-10"><LanguageSwitch disabled={loading} /></div>}
+           {/* Form column — the wizard opens directly on step 1, so there is no
+               front-door choice ahead of it, and it fills the width on every
+               step (the mission step's half-width split is gone). */}
+@@ -3001,7 +3003,7 @@
+                         <motion.span key={step} {...titleSwapMotion} className="inline-block">
+                           {step === 4
+                             ? "Paperclip works with your subscription or API keys."
+-                            : `${agentName.trim() || "Your first agent"} is ready to work!`}
++                            : document.documentElement.lang === "ru" ? `${agentName.trim() || "Ваш первый агент"} готов к работе!` : `${agentName.trim() || "Your first agent"} is ready to work!`}
+                         </motion.span>
+                       </p>
+                     </motion.div>
+@@ -3027,7 +3029,7 @@
+               {step === 1 && (
+                 <motion.div key="step-1" {...stepContentMotion} exit={stepHandoff ? stepContentMotion.exit : undefined} className="mx-auto flex w-full flex-col gap-9">
+                   <div className="flex flex-col gap-2">
+-                    <Label htmlFor="onboarding-company-name">Name</Label>
++                    <Label htmlFor="onboarding-company-name">{document.documentElement.lang === "ru" ? "Название" : "Name"}</Label>
+                     <Input
+                       id="onboarding-company-name"
+                       className="h-(--sz-44px) rounded-lg border-transparent bg-muted shadow-none dark:bg-muted"
+@@ -3148,7 +3150,7 @@
+                     >
+                       <div className="-ml-3 mt-1">
+                         <CredentialModeLink mode={credentialMode} onChange={setCredentialMode} />
+-                        {savedKeys.options.length > 0 && <p className="px-3 text-sm text-muted-foreground">{savedKeys.options.length} saved API {savedKeys.options.length === 1 ? "key available" : "keys available"}.</p>}
++                        {savedKeys.options.length > 0 && <p className="px-3 text-sm text-muted-foreground">{document.documentElement.lang === "ru" ? `Сохранено ключей API: ${savedKeys.options.length}` : `${savedKeys.options.length} saved API ${savedKeys.options.length === 1 ? "key available" : "keys available"}.`}</p>}
+                         {credentialMode === "subscription" && authSignalStatus === "present" && <p className="px-3 text-sm text-muted-foreground">An existing provider connection is available.</p>}
+                       </div>
+                     </motion.div>
+@@ -3197,7 +3199,7 @@
+                       </p>
+                     ) : credentialMode === "api" ? (
+                       <OnboardingLoginCard
+-                        instruction={hasGatewaySelection || connectionModels ? "Choose a model for your saved connection" : savedKeys.options.length ? "Choose a saved API key or enter a new one" : `Provide your ${
++                        instruction={hasGatewaySelection || connectionModels ? "Choose a model for your saved connection" : savedKeys.options.length ? "Choose a saved API key or enter a new one" : document.documentElement.lang === "ru" ? `Введите ключ API ${connectSourceLabel} для подключения` : `Provide your ${
+                           CONNECT_SOURCE_NAMES[adapterType] ?? adapterType
+                         } API key to connect`}
+                       >
+@@ -3222,7 +3224,7 @@
+                           }}
+                           onSubmit={() => handleConnectStepPrimary()}
+                         />}
+-                        {managedProvider && !selectedApiKey && !hasGatewaySelection && !connectionModels && <p className="text-xs text-muted-foreground">This will be your default {CONNECT_SOURCE_NAMES[adapterType] ?? managedProvider} account.</p>}
++                        {managedProvider && !selectedApiKey && !hasGatewaySelection && !connectionModels && <p className="text-xs text-muted-foreground">{document.documentElement.lang === "ru" ? `Это будет ваша основная учётная запись ${connectSourceLabel}.` : `This will be your default ${connectSourceLabel} account.`}</p>}
+                         {hasGatewaySelection && (gatewayLookupFailed ? <>
+                           <p role="alert" className="text-sm text-destructive">Your saved gateway connection could not be loaded. Retry to choose a model and connect your agent.</p>
+                           <Button type="button" variant="outline" disabled={loading || adapterEnvLoading} onClick={() => { void connectionModelState.refresh(); }}>
+--- a/src/components/onboarding/CredentialModeLink.tsx
++++ b/src/components/onboarding/CredentialModeLink.tsx
+@@ -18,8 +18,8 @@
+  */
+ 
+ const LINK_LABEL: Record<CredentialMode, string> = {
+-  subscription: "Use subscription instead",
+-  api: "Use API key instead",
++  subscription: document.documentElement.lang === "ru" ? "Использовать подписку" : "Use subscription instead",
++  api: document.documentElement.lang === "ru" ? "Использовать ключ API" : "Use API key instead",
+ };
+ const NATIVE_MODES: CredentialMode[] = ["subscription", "api"];
+ 
+--- a/src/components/onboarding/ModelSourceTiles.tsx
++++ b/src/components/onboarding/ModelSourceTiles.tsx
+@@ -33,9 +33,9 @@
+ };
+ 
+ const CREDENTIAL_TAG_LABEL: Record<ModelConnectionMode, string> = {
+-  subscription: "Subscription",
+-  api: "API key",
+-  advanced: "Custom Gateway",
++  subscription: document.documentElement.lang === "ru" ? "Подписка" : "Subscription",
++  api: document.documentElement.lang === "ru" ? "Ключ API" : "API key",
++  advanced: document.documentElement.lang === "ru" ? "Свой шлюз" : "Custom Gateway",
+ };
+ 
+ /**
+--- a/src/components/onboarding/Stepper.tsx
++++ b/src/components/onboarding/Stepper.tsx
+@@ -115,7 +115,7 @@
+           <button
+             key={segment}
+             type="button"
+-            aria-label={labels[segment - 1] ?? `Step ${segment}`}
++            aria-label={(document.documentElement.lang === "ru" ? ({ "Name your organization": "Название организации", "Create your first agent": "Создание агента", "Connect a model": "Подключение модели", Review: "Проверка" } as Record<string, string>)[labels[segment - 1]] : labels[segment - 1]) ?? `${document.documentElement.lang === "ru" ? "Шаг" : "Step"} ${segment}`}
+             aria-current={segment === step ? "step" : undefined}
+             disabled={!jumpable}
+             onClick={() => jumpable && onJumpToStep?.(segment)}
+@@ -134,7 +134,7 @@
+       })}
+       {/* Out of flow, so it neither takes a row nor picks up the gap. */}
+       <span className="sr-only">
+-        Step {step} of {total}
++        {document.documentElement.lang === "ru" ? `Шаг ${step} из ${total}` : `Step ${step} of ${total}`}
+       </span>
+     </div>
+   );

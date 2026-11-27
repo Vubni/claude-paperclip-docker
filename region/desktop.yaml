@@ -1,0 +1,21 @@
+services:
+  desktop:
+    labels:
+      workspace.region.profile: ${REGION_DIGEST:?}
+    image: ${REGION_DESKTOP_IMAGE:?}
+    build: !override
+      context: ${REGION_DIR:?}
+      dockerfile: desktop.Dockerfile
+      args:
+        DESKTOP_BASE: ${REGION_DESKTOP_BASE:?}
+    networks: [workload]
+    ports: !reset []
+    dns: [127.0.0.1]
+    environment:
+      TZ: ${WORKSPACE_TZ:?}
+      http_proxy: http://region-gateway:3128
+      https_proxy: http://region-gateway:3128
+      HTTP_PROXY: http://region-gateway:3128
+      HTTPS_PROXY: http://region-gateway:3128
+      NO_PROXY: localhost,127.0.0.1
+      no_proxy: localhost,127.0.0.1
